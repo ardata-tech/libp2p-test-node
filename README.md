@@ -43,6 +43,14 @@ curl http://localhost:8080/get-eth-prices
 curl http://localhost:8080/get-connected-peers (WIP)
 ```
 
+## Docker
+To run the node in a docker container, you can use the following command:
+
+```bash
+docker build -t libp2p-node .
+docker run -p 8080:8080 -p 4001:4001 libp2p-node -e LISTEN_PORT=4001 libp2p-node
+```
+
 ## Notes
 - The node adds a postgres and sqlite DB so it supports both
 - The node has a basic REST API to check the eth price. Connected peers is WIP.
