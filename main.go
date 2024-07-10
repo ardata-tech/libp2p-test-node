@@ -158,19 +158,20 @@ func main() {
 		}
 
 		// Skip if the message was published by the same node
-		//fmt.Println(receivedMsg.Message.NodeID)
 		if receivedMsg.Message.NodeID == nodeID {
 			continue
 		}
 
+		// unmarshal the message
 		msgJson, err := json.Marshal(receivedMsg.Message)
 		if err != nil {
 			log.Println("Failed to marshal message:", err)
 			continue
 		}
 
+		// hash the message
 		hash := sha256.Sum256(msgJson)
-		msgID := hex.EncodeToString(hash[:])
+		msgID := hex.EncodeToString(hash[:]) // Use the hash as the message ID
 		if storedMsg, exists := messageStore[msgID]; exists {
 			for pubKeyHex, sig := range receivedMsg.Signatures {
 				if _, exists := storedMsg.Signatures[pubKeyHex]; !exists {
@@ -181,6 +182,7 @@ func main() {
 			messageStore[msgID] = &receivedMsg
 		}
 
+		// Verify the signatures
 		validSignatures := 0
 		for pubKeyHex, sig := range messageStore[msgID].Signatures {
 			pubKeyBytes, err := hex.DecodeString(pubKeyHex)
@@ -197,6 +199,8 @@ func main() {
 				validSignatures++
 			}
 		}
+
+		// If the message has 3 valid signatures, store it
 		if validSignatures >= 3 {
 			if err := cfg.DB.Create(&messageStore[msgID].Message).Error; err != nil {
 				//log.Println("Failed to store message:", err)
@@ -224,8 +228,6 @@ func main() {
 			if err := pubSub.Topic.Publish(context.Background(), signedMsgJson); err != nil {
 				log.Println("Failed to republish message:", err)
 			}
-			//log.Printf("Republished message with ID: %s\n", msgID)
 		}
-		time.Sleep(5 * time.Second)
 	}
 }
