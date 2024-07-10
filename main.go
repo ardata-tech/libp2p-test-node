@@ -49,6 +49,7 @@ func main() {
 	h, listenAddr, err := peeringSvc.NewLibP2PHost(privKey, cfg.Peer.ListenPort)
 	nodeID := h.ID().String()
 
+	// handle peer connection
 	peeringSvc.HandlePeerDisconnection(h)
 
 	log.Printf("Node ID: %s\n", nodeID)
@@ -77,16 +78,19 @@ func main() {
 		}
 	}
 
+	// initialize the discovert using ipfs dht
 	var dhtIpfs *dht.IpfsDHT
 	if dhtIpfs, err = peeringSvc.SetupDiscovery(h); err != nil {
 		log.Fatal(err)
 	}
 
+	// initialize the pubsub
 	pubSub := core.NewPubSub(h, cfg.PubSub.TopicName)
 
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
+	// run the price checker
 	go func() {
 		for {
 			priceService := protocols.NewPriceService()
@@ -141,6 +145,7 @@ func main() {
 		}
 	}()
 
+	// store the message
 	messageStore := make(map[string]*core.SignedMessage)
 	cfg.DHT = dhtIpfs
 	cfg.Host = h
